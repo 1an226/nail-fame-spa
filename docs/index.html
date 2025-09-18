@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>NAIL FAME SPA — Offline Booking</title>
+<style>
+  :root{
+    --bg:#fff6fb; --card:#ffffff; --ink:#3b2b3a; --accent:#b30086; --accent-2:#ff66cc;
+    --muted:#7f6b7f; --ok:#22c55e; --warn:#f59e0b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+  header{background:linear-gradient(180deg,var(--accent),#9b0a73);color:white;padding:18px 14px;position:sticky;top:0;z-index:10}
+  .wrap{max-width:980px;margin:18px auto;padding:0 14px}
+  h1{margin:0;font-size:20px}
+  .sub{font-size:13px;opacity:.95;margin-top:4px}
+  .grid{display:grid;gap:16px}
+  @media(min-width:900px){ .main-grid{grid-template-columns:1fr 420px; gap:20px} }
+  section.card{background:var(--card);border-radius:12px;padding:16px;box-shadow:0 10px 30px rgba(179,0,134,.06)}
+  .title{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .title h2{margin:0;font-size:16px;color:var(--accent)}
+  .muted{color:var(--muted);font-size:13px}
+  /* services grid */
+  .services-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+  .svc{padding:12px;border-radius:10px;border:1px solid #f0e7f0;background:#fff;display:flex;flex-direction:column;gap:8px}
+  .svc .name{font-weight:700;color:#50204a}
+  .svc .price{font-weight:800;color:var(--accent)}
+  .svc small{color:var(--muted)}
+  .btn{background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:10px;cursor:pointer;font-weight:700}
+  .btn.ghost{background:transparent;color:var(--accent);border:1px solid #f0e7f0}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  label{font-weight:700;font-size:13px;margin-bottom:6px;display:block}
+  input[type="text"],input[type="tel"],input[type="email"],select,textarea,input[type="date"],input[type="time"]{
+    padding:10px;border-radius:10px;border:1px solid #eee;width:100%;font-size:14px;
+  }
+  textarea{min-height:72px;resize:vertical}
+  .slots{display:flex;gap:8px;flex-wrap:wrap;max-height:180px;overflow:auto;padding:6px 4px}
+  .slot{padding:8px 10px;border-radius:8px;border:1px solid #eee;cursor:pointer;font-weight:700}
+  .slot.offpeak{background:#f5fffb;border-color:#dff7ea;color:#006a3b}
+  .slot.busy{opacity:.45;pointer-events:none}
+  .slot.selected{background:var(--accent);color:white;border-color:transparent}
+  .tech-card{display:flex;gap:10px;align-items:center;padding:10px;border-radius:10px;border:1px solid #f0e7f0}
+  .tech-photo{width:56px;height:56px;border-radius:8px;background:linear-gradient(135deg,#ffd1f1,#ffc2ea);display:flex;align-items:center;justify-content:center;font-weight:800;color:#6f184b}
+  .fav{cursor:pointer;font-size:18px}
+  .summary{background:#fff0f4;border-radius:10px;padding:12px;border:1px dashed #ffdff0}
+  /* admin */
+  .admin-actions{display:flex;gap:8px;flex-wrap:wrap}
+  .table{width:100%;border-collapse:collapse}
+  .table th,.table td{padding:8px;border-bottom:1px solid #f1e6f1;font-size:13px;text-align:left}
+  /* kudos modal */
+  .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.38);z-index:40}
+  .modal .panel{background:white;padding:20px;border-radius:12px;max-width:420px;width:94%;text-align:center}
+  .anime-circle{width:120px;height:120px;border-radius:50%;margin:12px auto;background:radial-gradient(circle at 30% 30%,#ffd1f1 0 18%,#ff7bcf 30%,#ffc2ea 60%);box-shadow:0 10px 30px rgba(179,0,134,.15)}
+  .confetti-canvas{position:fixed;inset:0;pointer-events:none;z-index:45}
+  footer{padding:18px;text-align:center;color:var(--muted);font-size:13px}
+  .small{font-size:13px;color:var(--muted)}
+  .hidden{display:none}
+  .pill{background:#fff0f4;padding:6px 10px;border-radius:999px;border:1px solid #ffe6f3;font-size:13px}
+  .actions{display:flex;gap:8px;align-items:center}
+  .control-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .badge{background:#fff0f4;color:var(--accent);padding:4px 8px;border-radius:999px;font-weight:700}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+      <div>
+        <h1>💅 NAIL FAME SPA — Kangundo Rd</h1>
+        <div class="sub">Open 09:00 — 22:00 • Personalized, luxury nail & pedicure experiences</div>
+      </div>
+      <div class="actions">
+        <button class="btn ghost" id="openAdminBtn">Admin</button>
+        <button class="btn" id="clearStorageBtn" title="Clear all saved bookings">Clear Data</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap main-grid grid">
+  <!-- LEFT: booking flow -->
+  <div>
+    <section class="card">
+      <div class="title">
+        <h2>Choose Services</h2>
+        <div class="small">Tap to add — bundles supported</div>
+      </div>
+      <div class="services-grid" id="servicesGrid"></div>
+    </section>
+
+    <section class="card" style="margin-top:14px">
+      <div class="title"><h2>Pick Technician & Date</h2><div class="pill">Smart scheduling</div></div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px">
+        <div style="flex:1">
+          <label>Technician</label>
+          <div id="techList" style="display:grid;gap:8px"></div>
+        </div>
+        <div style="width:180px">
+          <label>Date</label>
+          <input type="date" id="date" />
+        </div>
+      </div>
+
+      <div style="margin-top:12px">
+        <label>Available times</label>
+        <div class="slots" id="slots"></div>
+        <div class="small" style="margin-top:8px">Off-peak times are highlighted — great for discounts & quick service.</div>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top:14px">
+      <div class="title"><h2>Contact & Preferences</h2><div class="muted small">Optional details help us serve you better</div></div>
+      <div class="grid" style="grid-template-columns:1fr 1fr;gap:12px;margin-top:10px">
+        <div>
+          <label>Your name</label>
+          <input type="text" id="custName" name="custName" placeholder="Optional" />
+        </div>
+        <div>
+          <label>Phone (optional)</label>
+          <input type="tel" id="custPhone" name="custPhone" placeholder="07XX XXX XXX" />
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <label>Message to salon</label>
+        <textarea id="custMsg" placeholder="e.g. French tips with subtle glitter"></textarea>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:12px;align-items:center;flex-wrap:wrap">
+        <div style="flex:1">
+          <label>Payment</label>
+          <select id="payment">
+            <option value="Cash">Cash</option>
+            <option value="Card">Card</option>
+            <option value="M-Pesa">M-Pesa</option>
+          </select>
+          <input type="tel" id="mpesaNo" class="hidden" placeholder="M-Pesa phone (07..)" style="margin-top:8px" />
+        </div>
+        <div style="width:220px">
+          <label>Call if late (10 min)</label>
+          <select id="callIfLate"><option value="No">No</option><option value="Yes">Yes</option></select>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center">
+        <div class="summary">
+          <div class="small">Bundle total</div>
+          <div style="font-weight:800;font-size:18px" id="totalText">KSh 0</div>
+          <div class="small" id="tierText">Tier: Bronze • Points: 0</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn" id="suggestBtn">Suggest Best Time</button>
+          <button class="btn" id="bookBtn">Confirm Booking</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top:14px">
+      <div class="title"><h2>Mood & Style Recommendations</h2><div class="muted small">Not sure? pick a mood — we’ll suggest colors & services</div></div>
+      <div style="margin-top:10px" class="row">
+        <button class="btn ghost mood" data-mood="relaxed">💆 Relaxed</button>
+        <button class="btn ghost mood" data-mood="bold">💃 Bold</button>
+        <button class="btn ghost mood" data-mood="pampered">👑 Pampered</button>
+        <button class="btn ghost mood" data-mood="wedding">💍 Wedding</button>
+      </div>
+      <div style="margin-top:12px">
+        <label>Describe outfit / skin tone (optional)</label>
+        <input type="text" id="styleCue" placeholder="e.g. wearing red dress / warm skin tone" />
+        <div class="small" style="margin-top:8px">Recommendation: <span id="recText">—</span></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- RIGHT: AR, Store, Admin shortcuts -->
+  <aside>
+    <section class="card">
+      <div class="title"><h2>Virtual Try-On (AR)</h2><div class="muted small">Tap a color, then allow camera</div></div>
+      <div style="display:grid;gap:8px;margin-top:10px">
+        <video id="camera" autoplay playsinline style="width:100%;border-radius:10px;background:#222"></video>
+        <canvas id="overlay" style="width:100%;border-radius:10px;border:1px dashed #eee"></canvas>
+        <div class="row" id="colorRow"></div>
+        <div class="small">Tip: place your hand inside the video frame and use overlay as guide.</div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn ghost" id="startCam">Start Camera</button>
+          <button class="btn ghost" id="stopCam">Stop Camera</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top:14px">
+      <div class="title"><h2>Mini Shop</h2><div class="muted small">Tap item to add to booking</div></div>
+      <div id="shopList" style="display:grid;gap:8px;margin-top:10px"></div>
+      <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center">
+        <div class="small">Cart: <span id="cartCount">0</span></div>
+        <button class="btn ghost" id="viewCart">View</button>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top:14px">
+      <div class="title"><h2>Admin Quick</h2><div class="muted small">Open admin panel</div></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn" id="adminQuick">Admin</button>
+        <button class="btn ghost" id="exportCsv">Export CSV</button>
+      </div>
+      <div style="margin-top:12px" class="small">You can also add bookings from Admin and notify clients from here.</div>
+    </section>
+  </aside>
+</main>
+
+<footer class="wrap small">Offline demo • Data saved locally on this device. Want PWA/app packaging? I can prepare it.</footer>
+
+<!-- Admin modal -->
+<div class="modal" id="adminModal">
+  <div class="panel" style="max-width:920px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <h3>Admin Login</h3>
+      <button class="btn ghost" id="closeAdmin">Close</button>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input id="adminUser" placeholder="username" style="flex:1" />
+      <input id="adminPass" placeholder="password" type="password" style="flex:1" />
+      <button class="btn" id="doAdmin">Login</button>
+    </div>
+    <div id="adminError" class="small muted" style="margin-top:10px"></div>
+    <hr style="margin:12px 0" />
+    <div id="adminDash" class="hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px">
+        <h3>Bookings & Messages</h3>
+        <div class="admin-actions">
+          <button class="btn ghost" id="csvExport">Export CSV</button>
+          <button class="btn ghost" id="closeDash">Logout</button>
+        </div>
+      </div>
+      <div style="max-height:320px;overflow:auto">
+        <table class="table" id="bookTbl">
+          <thead><tr><th>#</th><th>Date</th><th>Time</th><th>Tech</th><th>Services</th><th>Total</th><th>Name</th><th>Phone</th><th>Msg</th><th>LateCall</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <hr />
+      <div>
+        <h4>Waitlist</h4>
+        <div id="waitList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Congrats modal -->
+<div class="modal" id="kudosModal">
+  <div class="panel">
+    <div class="anime-circle"></div>
+    <h3>Booking Confirmed ✨</h3>
+    <p id="kudosText" class="muted">We’ll see you soon!</p>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
+      <button class="btn" id="addCalendar">Add to Calendar</button>
+      <button class="btn ghost" id="closeKudos">Done</button>
+    </div>
+  </div>
+</div>
+<canvas class="confetti-canvas" id="confetti"></canvas>
+
+<script>
+/* ============================
+   DATA & STATE
+   ============================ */
+const SERVICES = [
+  {id:"Manicure", price:700, mins:30},
+  {id:"Pedicure", price:1200, mins:45},
+  {id:"Gel", price:200, mins:20}
+];
+const TECHS = [
+  {id:"Edison", bio:"Nail Art Specialist", fav:false},
+  {id:"Adrian", bio:"Gel Nails Expert", fav:false},
+  {id:"Kasika", bio:"Pedicure & Relaxation", fav:false},
+  {id:"Moriso", bio:"Classic Manicure Specialist", fav:false}
+];
+const STORE = [
+  {id:"Cuticle Oil", price:550},
+  {id:"Nail Strengthener", price:800},
+  {id:"Gift Card KSh 2000", price:2000}
+];
+const OPEN=9, CLOSE=22; // hours
+const SLOT_INTERVAL=30; // minutes
+const CREDS={user:"admin", pass:"nailfame123"};
+// persistent storage keys
+const KEY_BOOKINGS="nfs_bookings_v1", KEY_CUSTOMERS="nfs_customers_v1", KEY_POINTS="nfs_points_v1", KEY_WAIT="nfs_wait_v1";
+
+// read or initialize
+let bookings = JSON.parse(localStorage.getItem(KEY_BOOKINGS)||"[]");
+let customers = JSON.parse(localStorage.getItem(KEY_CUSTOMERS)||"{}");
+let points = JSON.parse(localStorage.getItem(KEY_POINTS)||"{}");
+let waitlist = JSON.parse(localStorage.getItem(KEY_WAIT)||"[]");
+let cart = [];
+
+// UI refs
+const servicesGrid = document.getElementById("servicesGrid");
+const techList = document.getElementById("techList");
+const dateInput = document.getElementById("date");
+const slotsWrap = document.getElementById("slots");
+const totalText = document.getElementById("totalText");
+const tierText = document.getElementById("tierText");
+const custName = document.getElementById("custName");
+const custPhone = document.getElementById("custPhone");
+const custMsg = document.getElementById("custMsg");
+const payment = document.getElementById("payment");
+const mpesaNo = document.getElementById("mpesaNo");
+const callIfLate = document.getElementById("callIfLate");
+const suggestBtn = document.getElementById("suggestBtn");
+const bookBtn = document.getElementById("bookBtn");
+const moodBtns = document.querySelectorAll(".mood");
+const styleCue = document.getElementById("styleCue");
+const recText = document.getElementById("recText");
+const shopList = document.getElementById("shopList");
+const cartCount = document.getElementById("cartCount");
+
+// selection state
+let selectedServices = new Set();
+let selectedTech = TECHS[0].id;
+let selectedDate = null;
+let selectedTime = null;
+let selectedColor = "#b30086";
+
+/* ============================
+   UTILITIES
+   ============================ */
+function saveState(){
+  localStorage.setItem(KEY_BOOKINGS, JSON.stringify(bookings));
+  localStorage.setItem(KEY_CUSTOMERS, JSON.stringify(customers));
+  localStorage.setItem(KEY_POINTS, JSON.stringify(points));
+  localStorage.setItem(KEY_WAIT, JSON.stringify(waitlist));
+}
+function fmtK(n){ return "KSh " + (n||0).toLocaleString(); }
+function todaysISO(){ return new Date().toISOString().split('T')[0]; }
+function getSlots(){
+  const arr=[]; for(let h=OPEN; h<=CLOSE; h++){
+    ["00","30"].forEach(m=>{
+      if(h===CLOSE && m!=="00") return;
+      arr.push(`${String(h).padStart(2,"0")}:${m}`);
+    });
+  } return arr;
+}
+function isClash(date, time, tech){
+  return bookings.some(b=>b.date===date && b.time===time && b.tech===tech);
+}
+function minutesSelected(){
+  let m=0; SERVICES.forEach(s=>{ if(selectedServices.has(s.id)) m+=s.mins });
+  return Math.max(30,m);
+}
+function priceSelected(){
+  let p=0; SERVICES.forEach(s=>{ if(selectedServices.has(s.id)) p+=s.price });
+  p += cart.reduce((a,b)=>a+b.price,0);
+  // loyalty discount
+  const phone=custPhone.value.trim(); const pts = points[phone]||0;
+  let disc=0; if(pts>=250) disc=.15; else if(pts>=150) disc=.10; else if(pts>=80) disc=.05;
+  return Math.round(p*(1-disc));
+}
+function pointsFor(price){ return Math.floor(price/50); }
+function tierFor(phone){ const pts = points[phone]||0; if(pts>=250) return "VIP"; if(pts>=150) return "Gold"; if(pts>=80) return "Silver"; return "Bronze"; }
+
+/* ============================
+   RENDER UI
+   ============================ */
+function renderServices(){
+  servicesGrid.innerHTML = "";
+  SERVICES.forEach(s=>{
+    const el=document.createElement("div"); el.className="svc";
+    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div class="name">${s.id}</div><small>${s.mins} min</small>
+      </div>
+      <div style="text-align:right"><div class="price">${fmtK(s.price)}</div>
+      <label style="font-size:12px"><input type="checkbox" data-svc="${s.id}" ${selectedServices.has(s.id)?'checked':''}/> Add</label>
+      </div>
+    </div>`;
+    servicesGrid.appendChild(el);
+  });
+}
+function renderTechs(){
+  techList.innerHTML="";
+  TECHS.forEach(t=>{
+    const el=document.createElement("div"); el.className="tech-card";
+    el.innerHTML = `<div class="tech-photo">${t.id.slice(0,1)}</div>
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><strong>${t.id}</strong><div class="muted" style="font-size:12px">${t.bio}</div></div>
+          <div style="text-align:right">
+            <div style="color:var(--muted);font-size:12px">⭐</div>
+            <div><button class="btn ghost" data-fav="${t.id}">${t.fav? '♥' : '♡'}</button></div>
+          </div>
+        </div>
+        <div style="margin-top:8px"><label style="font-weight:600">Select</label>
+        <div><input type="radio" name="tech" value="${t.id}" ${selectedTech===t.id?'checked':''}/> Choose</div></div>
+      </div>`;
+    techList.appendChild(el);
+  });
+}
+function renderSlots(){
+  slotsWrap.innerHTML="";
+  if(!selectedDate){ slotsWrap.innerHTML='<div class="muted">Pick a date to see available slots</div>'; return; }
+  const sl = getSlots();
+  sl.forEach(time=>{
+    const hr = +time.split(":")[0];
+    const div=document.createElement("div"); div.className="slot";
+    if(OFF_PEAKS.includes(hr)) div.classList.add("offpeak");
+    if(isClash(selectedDate,time,selectedTech)) div.classList.add("busy");
+    div.textContent = time;
+    div.onclick = ()=>{ selectedTime=time; document.querySelectorAll('.slot').forEach(s=>s.classList.remove('selected')); div.classList.add('selected'); };
+    slotsWrap.appendChild(div);
+  });
+}
+const OFF_PEAKS=[10,15,16,20,21]; // highlight hours
+function renderShop(){
+  shopList.innerHTML="";
+  STORE.forEach(it=>{
+    const el=document.createElement("div"); el.className="svc";
+    el.style.display="flex"; el.style.justifyContent="space-between"; el.style.alignItems="center";
+    el.innerHTML = `<div><strong>${it.id}</strong><div class="muted small">add to booking</div></div>
+      <div style="text-align:right"><div class="price">${fmtK(it.price)}</div><button class="btn ghost" data-shop="${it.id}">Add</button></div>`;
+    shopList.appendChild(el);
+  });
+  cartCount.textContent = cart.length;
+}
+function refreshTotals(){ totalText.textContent = fmtK(priceSelected()); tierText.textContent = `Tier: ${tierFor(custPhone.value.trim())} • Points: ${points[custPhone.value.trim()]||0}` }
+
+/* ============================
+   EVENTS
+   ============================ */
+// init date
+dateInput.value = todaysISO(); selectedDate = dateInput.value;
+dateInput.addEventListener('change', e=>{ selectedDate = e.target.value; renderSlots(); });
+
+// service toggles
+document.addEventListener('change', e=>{
+  if(e.target.matches('input[data-svc]')){
+    const id = e.target.dataset.svc;
+    if(e.target.checked) selectedServices.add(id); else selectedServices.delete(id);
+    refreshTotals();
+  }
+  if(e.target.name==='tech'){ selectedTech = e.target.value; renderSlots(); }
+});
+document.addEventListener('click', e=>{
+  if(e.target.matches('[data-fav]')){ const id=e.target.dataset.fav; const t=TECHS.find(x=>x.id===id); t.fav=!t.fav; renderTechs(); saveTechFavs(); }
+  if(e.target.matches('[data-shop]')){ const id=e.target.dataset.shop; const it=STORE.find(x=>x.id===id); cart.push(it); renderShop(); refreshTotals(); }
+});
+document.getElementById("payment").addEventListener('change', e=>{ if(e.target.value==="M-Pesa") mpesaNo.classList.remove('hidden'); else mpesaNo.classList.add('hidden'); });
+
+// suggestions (simple smart scheduling)
+document.getElementById("suggestBtn").addEventListener('click', ()=>{
+  if(!selectedDate){ alert('Pick a date first'); return; }
+  const slots = getSlots().filter(t=>!isClash(selectedDate,t,selectedTech));
+  // prefer off-peak
+  const best = slots.find(t=>OFF_PEAKS.includes(+t.split(':')[0])) || slots[0];
+  if(!best){ alert('No free slots: you can be added to waitlist when you try to book.'); return; }
+  selectedTime = best;
+  document.querySelectorAll('.slot').forEach(s=>s.classList.remove('selected'));
+  const el = Array.from(document.querySelectorAll('.slot')).find(s=>s.textContent===best);
+  if(el) el.classList.add('selected');
+  alert(`Suggested slot: ${best} (${OFF_PEAKS.includes(+best.split(':')[0]) ? 'off-peak' : 'regular'})`);
+});
+
+// booking
+document.getElementById("bookBtn").addEventListener('click', ()=>{
+  if(selectedServices.size===0){ alert('Pick at least one service'); return; }
+  if(!selectedDate || !selectedTime){ alert('Pick date and time'); return; }
+  // check clash one more time
+  if(isClash(selectedDate, selectedTime, selectedTech)){
+    if(confirm('Slot already taken. Join waitlist for first available?')){ waitlist.push({desired:`${selectedDate} ${selectedTime}`, tech:selectedTech, name:custName.value.trim(), phone:custPhone.value.trim()}); saveState(); alert('Added to waitlist'); }
+    return;
+  }
+  const services = Array.from(selectedServices);
+  const total = priceSelected();
+  const booking = {
+    id:Date.now(), date:selectedDate, time:selectedTime, tech:selectedTech, services, total,
+    name:custName.value.trim(), phone:custPhone.value.trim(), msg:custMsg.value.trim(), payment:payment.value,
+    mpesa: mpesaNo.value.trim(), callIfLate:callIfLate.value, cart:cart.slice()
+  };
+  bookings.push(booking);
+  // update loyalty
+  if(booking.phone){ points[booking.phone] = (points[booking.phone]||0) + pointsFor(total); }
+  // customers
+  if(booking.phone) customers[booking.phone] = {name:booking.name||'', email:'', favs:TECHS.filter(t=>t.fav).map(t=>t.id)};
+  saveState();
+  renderAdminList();
+  // show confetti + modal
+  showKudos(booking);
+  // reset selections for next
+  selectedServices.clear(); renderServices();
+  cart = []; renderShop(); refreshTotals();
+  // re-render slots to mark as busy
+  renderSlots();
+});
+
+// admin
+document.getElementById("openAdminBtn").addEventListener('click', ()=> document.getElementById('adminModal').style.display='flex');
+document.getElementById("closeAdmin").addEventListener('click', ()=> document.getElementById('adminModal').style.display='none');
+document.getElementById("doAdmin").addEventListener('click', ()=>{
+  const u=document.getElementById('adminUser').value, p=document.getElementById('adminPass').value;
+  if(u===CREDS.user && p===CREDS.pass){ document.getElementById('adminError').textContent=''; document.getElementById('adminDash').classList.remove('hidden'); renderAdminList(); }
+  else document.getElementById('adminError').textContent='Wrong credentials';
+});
+document.getElementById("closeDash").addEventListener('click', ()=>{ document.getElementById('adminDash').classList.add('hidden'); document.getElementById('adminModal').style.display='none'; });
+
+// CSV export
+function exportCSV(){ const rows=[['id','date','time','tech','services','total','name','phone','msg','payment','callIfLate']]; bookings.forEach(b=>rows.push([b.id,b.date,b.time,b.tech,b.services.join('|'),b.total,b.name,b.phone,b.msg,b.payment,b.callIfLate])); const csv = rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n'); const blob=new Blob([csv],{type:'text/csv'}); const u=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=u; a.download='nailfame_bookings.csv'; a.click(); URL.revokeObjectURL(u); }
+document.getElementById("exportCsv").addEventListener('click', exportCSV);
+document.getElementById("csvExport").addEventListener('click', exportCSV);
+
+// clear storage
+document.getElementById("clearStorageBtn").addEventListener('click', ()=>{
+  if(confirm('Clear all saved bookings and local data?')){ localStorage.removeItem(KEY_BOOKINGS); localStorage.removeItem(KEY_CUSTOMERS); localStorage.removeItem(KEY_POINTS); localStorage.removeItem(KEY_WAIT); bookings=[]; customers={}; points={}; waitlist=[]; renderAdminList(); alert('Cleared'); }
+});
+
+// admin quick open
+document.getElementById("adminQuick").addEventListener('click', ()=>{ document.getElementById('adminModal').style.display='flex'; document.getElementById('adminUser').value=CREDS.user; document.getElementById('adminPass').value=CREDS.pass; document.getElementById('doAdmin').click(); });
+
+// view cart placeholder
+document.getElementById("viewCart").addEventListener('click', ()=> alert('Cart items will be added to booking. Items: ' + (cart.map(c=>c.id).join(', ') || 'none')));
+
+/* ============================
+   RENDER & START
+   ============================ */
+function renderAll(){ renderServices(); renderTechs(); renderSlots(); renderShop(); refreshTotals(); renderAdminList(); }
+function renderAdminList(){
+  const tbody = document.querySelector('#bookTbl tbody'); tbody.innerHTML='';
+  bookings.slice().reverse().forEach((b,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td>${i+1}</td><td>${b.date}</td><td>${b.time}</td><td>${b.tech}</td><td>${b.services.join(', ')}</td><td>${fmtK(b.total)}</td><td>${b.name||''}</td><td>${b.phone||''}</td><td>${b.msg||''}</td><td>${b.callIfLate||'No'}</td>`;
+    tbody.appendChild(tr);
+  });
+  // waitlist
+  const wl = document.getElementById('waitList'); wl.innerHTML = waitlist.map((w,i)=>`<div style="padding:6px;border-bottom:1px dashed #eee">${i+1}. ${w.desired} • ${w.tech} • ${w.name||''} ${w.phone? ' • '+w.phone : ''}</div>`).join('') || '<div class="muted">No waitlist entries</div>';
+}
+
+// save tech favs
+function saveTechFavs(){ localStorage.setItem('nfs_techs', JSON.stringify(TECHS)); }
+function loadTechFavs(){ try{ const ts=JSON.parse(localStorage.getItem('nfs_techs')||'null'); if(ts){ for(let i=0;i<TECHS.length;i++){ TECHS[i].fav = ts[i]?.fav || false } } }catch(e){} }
+
+loadTechFavs();
+renderAll();
+
+/* ============================
+   Simple AR Try-on (overlay)
+   ============================ */
+const camera = document.getElementById('camera'), overlay=document.getElementById('overlay'), ctx=overlay.getContext?.('2d');
+let camStream=null;
+document.getElementById('startCam').addEventListener('click', async ()=>{
+  try{
+    camStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    camera.srcObject = camStream;
+    camera.onloadedmetadata = ()=>{ overlay.width = camera.videoWidth || 480; overlay.height = camera.videoHeight || 360; camera.play(); drawOverlayLoop(); }
+  }catch(e){ alert('Camera denied or not available'); }
+});
+document.getElementById('stopCam').addEventListener('click', ()=>{ if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; camera.srcObject=null; ctx && ctx.clearRect(0,0,overlay.width||0,overlay.height||0) }});
+const colors = ['#e91e63','#b30086','#ff8fab','#8e44ad','#111','#ffffff','#4caf50','#00bcd4'];
+const colorRow = document.getElementById('colorRow');
+colors.forEach(c=>{
+  const b=document.createElement('button'); b.className='btn ghost'; b.style.padding='8px'; b.style.background=c; b.style.border='1px solid #fff'; b.onclick=()=>{ selectedColor=c; }; colorRow.appendChild(b);
+});
+function drawOverlayLoop(){
+  if(!ctx) return;
+  if(camera.srcObject && camera.readyState>=2){
+    ctx.clearRect(0,0,overlay.width,overlay.height);
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle = selectedColor;
+    // simple 5 "nails" overlay near bottom center
+    const w=overlay.width, h=overlay.height;
+    const nailW = Math.max(20, Math.floor(w*0.06)), nailH = Math.max(44, Math.floor(h*0.14));
+    const gap = nailW * 0.6; const total = 5*nailW + 4*gap;
+    let startX = (w - total)/2; let y = Math.floor(h*0.45);
+    for(let i=0;i<5;i++){ ctx.beginPath(); ctx.roundRect(startX + i*(nailW+gap), y, nailW, nailH, 8); ctx.fill(); }
+    ctx.globalAlpha = 1;
+  }
+  requestAnimationFrame(drawOverlayLoop);
+}
+// polyfill for roundRect
+CanvasRenderingContext2D.prototype.roundRect = function (x,y,w,h,r){ if(!r) r=6; this.moveTo(x+r,y); this.arcTo(x+w,y,x+w,y+h,r); this.arcTo(x+w,y+h,x,y+h,r); this.arcTo(x,y+h,x,y,r); this.arcTo(x,y,x+w,y,r); this.closePath() };
+
+/* ============================
+   KUDOS / CONFETTI
+   ============================ */
+const confettiCanvas = document.getElementById('confetti'), confettiCtx = confettiCanvas.getContext('2d');
+function resizeConfetti(){ confettiCanvas.width = innerWidth; confettiCanvas.height = innerHeight; }
+window.addEventListener('resize', resizeConfetti); resizeConfetti();
+function confettiBurst(){
+  const pieces = Array.from({length:90}).map(()=>({
+    x:Math.random()*confettiCanvas.width, y:-20, vx:(Math.random()-.5)*6, vy:2+Math.random()*4, s:4+Math.random()*6, rot:Math.random()*Math.PI, vr:(Math.random()-.5)*0.2,
+    col:`hsl(${Math.random()*360},80%,60%)`
+  }));
+  let t=0; (function step(){
+    confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);
+    pieces.forEach(p=>{
+      p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.vy += 0.06;
+      confettiCtx.save(); confettiCtx.translate(p.x,p.y); confettiCtx.rotate(p.rot);
+      confettiCtx.fillStyle = p.col; confettiCtx.fillRect(-p.s/2,-p.s/2,p.s,p.s);
+      confettiCtx.restore();
+    });
+    t++; if(t<180) requestAnimationFrame(step); else confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);
+  })();
+}
+function showKudos(booking){
+  document.getElementById('kudosModal').style.display='flex';
+  document.getElementById('kudosText').textContent = `${booking.name?booking.name+', ':''}See you on ${booking.date} at ${booking.time} with ${booking.tech}!`;
+  confettiBurst();
+  // add to calendar button
+  document.getElementById('addCalendar').onclick = ()=> downloadICS(booking);
+}
+document.getElementById('closeKudos').addEventListener('click', ()=> document.getElementById('kudosModal').style.display='none');
+
+// ICS download
+function downloadICS(b){
+  const dt = b.date.replace(/-/g,''); const hh = b.time.replace(':',''); const dtStart = `${dt}T${hh}00`;
+  const dtEnd = dtStart; const ics = [
+    'BEGIN:VCALENDAR','VERSION:2.0','BEGIN:VEVENT',
+    `UID:${b.id}@nailfame.local`,
+    `DTSTAMP:${dtStart}`,
+    `DTSTART:${dtStart}`,
+    `SUMMARY:Nail appointment with ${b.tech}`,
+    `DESCRIPTION:${b.services.join(', ')} • ${fmtK(b.total)}`,
+    `LOCATION:NAIL FAME SPA – Kangundo Rd`,
+    'END:VEVENT','END:VCALENDAR'
+  ].join('\r\n');
+  const a=document.createElement('a'); a.href = 'data:text/calendar;charset=utf8,' + encodeURIComponent(ics); a.download='nailfame.ics'; a.click();
+}
+
+/* ============================
+   AI-Style Recommendations (lightweight)
+   ============================ */
+function recommend(){
+  const mood = Array.from(document.querySelectorAll('.mood.on')).map(b=>b.dataset.mood)[0] || null;
+  const cue = styleCue.value.toLowerCase();
+  let rec = [];
+  if(mood==='relaxed') rec = ['Pedicure','Mint/Soft Pink'];
+  else if(mood==='bold') rec = ['Manicure + Gel','Hot Pink / Deep Plum'];
+  else if(mood==='pampered') rec = ['Pedicure + Manicure + Gel','Champagne / Soft Glitter'];
+  else if(mood==='wedding') rec = ['French + Gel','Neutral Ivory or Pearl'];
+  // cue-based tweaks
+  if(cue.includes('red')) rec.push('Try Emerald or Gold accents');
+  if(cue.includes('wedding') || cue.includes('bride')) rec = ['French + Gel', 'Pearl/Neutral'];
+  recText.textContent = rec.join(' • ') || 'Pick a mood or type outfit/skin tone';
+}
+document.querySelectorAll('.mood').forEach(b=>b.addEventListener('click', e=>{ document.querySelectorAll('.mood').forEach(x=>x.classList.remove('on')); e.target.classList.add('on'); recommend(); }));
+styleCue.addEventListener('input', recommend);
+
+/* ============================
+   small utilities & init
+   ============================ */
+function loadDefaults(){ dateInput.value = todaysISO(); selectedDate = dateInput.value; renderSlots(); }
+loadDefaults();
+
+/* ============================
+   END
+   ============================ */
+</script>
+</body>
+</html>
