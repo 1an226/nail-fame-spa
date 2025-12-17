@@ -310,8 +310,6 @@ const bookBtn = document.getElementById("bookBtn");
 const moodBtns = document.querySelectorAll(".mood");
 const styleCue = document.getElementById("styleCue");
 const recText = document.getElementById("recText");
-const shopList = document.getElementById("shopList");
-const cartCount = document.getElementById("cartCount");
 
 // selection state
 let selectedServices = new Set();
@@ -409,17 +407,7 @@ function renderSlots(){
   });
 }
 const OFF_PEAKS=[10,15,16,20,21]; // highlight hours
-function renderShop(){
-  shopList.innerHTML="";
-  STORE.forEach(it=>{
-    const el=document.createElement("div"); el.className="svc";
-    el.style.display="flex"; el.style.justifyContent="space-between"; el.style.alignItems="center";
-    el.innerHTML = `<div><strong>${it.id}</strong><div class="muted small">add to booking</div></div>
-      <div style="text-align:right"><div class="price">${fmtK(it.price)}</div><button class="btn ghost" data-shop="${it.id}">Add</button></div>`;
-    shopList.appendChild(el);
-  });
-  cartCount.textContent = cart.length;
-}
+
 function refreshTotals(){ totalText.textContent = fmtK(priceSelected()); tierText.textContent = `Tier: ${tierFor(custPhone.value.trim())} • Points: ${points[custPhone.value.trim()]||0}` }
 
 /* ============================
@@ -513,8 +501,6 @@ document.getElementById("clearStorageBtn").addEventListener('click', ()=>{
 // admin quick open
 document.getElementById("adminQuick").addEventListener('click', ()=>{ document.getElementById('adminModal').style.display='flex'; document.getElementById('adminUser').value=CREDS.user; document.getElementById('adminPass').value=CREDS.pass; document.getElementById('doAdmin').click(); });
 
-// view cart placeholder
-document.getElementById("viewCart").addEventListener('click', ()=> alert('Cart items will be added to booking. Items: ' + (cart.map(c=>c.id).join(', ') || 'none')));
 
 /* ============================
    RENDER & START
